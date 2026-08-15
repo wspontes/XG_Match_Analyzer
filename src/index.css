@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100;
+  }
+
+  ::selection {
+    @apply bg-emerald-500/20;
+  }
+}
+
+@layer utilities {
+  .font-tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+/* Recharts default outline cleanup */
+.recharts-wrapper:focus,
+.recharts-surface:focus {
+  outline: none;
+}
