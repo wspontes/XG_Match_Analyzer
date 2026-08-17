@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Calculator, Eraser, AlertCircle, Info, Target } from 'lucide-react'
 import { Card } from './ui'
 import { parseDecimal } from '../utils/formatters'
@@ -28,7 +28,7 @@ function Field({ label, error, children }) {
   )
 }
 
-export default function MatchForm({ initial, onCalculate, onClear }) {
+export default function MatchForm({ initial, autofill, onCalculate, onClear }) {
   const [form, setForm] = useState({
     homeName: initial?.homeName ?? '',
     awayName: initial?.awayName ?? '',
@@ -36,6 +36,18 @@ export default function MatchForm({ initial, onCalculate, onClear }) {
     awayXG: initial ? String(initial.awayXG).replace('.', ',') : '',
   })
   const [errors, setErrors] = useState({})
+
+  useEffect(() => {
+    if (autofill?.data) {
+      setForm({
+        homeName: autofill.data.homeName ?? '',
+        awayName: autofill.data.awayName ?? '',
+        homeXG: String(autofill.data.homeXG).replace('.', ','),
+        awayXG: String(autofill.data.awayXG).replace('.', ','),
+      })
+      setErrors({})
+    }
+  }, [autofill])
 
   const setField = (key, value) => {
     setForm((f) => ({ ...f, [key]: value }))

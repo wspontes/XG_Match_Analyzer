@@ -3,6 +3,7 @@ import { Calculator } from 'lucide-react'
 import Header from '../components/Header'
 import Hero from '../components/Hero'
 import MatchForm from '../components/MatchForm'
+import XGScoreSearcher from '../components/XGScoreSearcher'
 import MatchSummary from '../components/MatchSummary'
 import ProbabilityCards from '../components/ProbabilityCards'
 import KeyMetrics from '../components/KeyMetrics'
@@ -47,6 +48,7 @@ export default function Home() {
   const [match, setMatch] = useState(DEFAULT_MATCH)
   const [tab, setTab] = useState('analise')
   const [mcResult, setMcResult] = useState(null)
+  const [autofill, setAutofill] = useState(null)
   const resultRef = useRef(null)
 
   const analysis = useMemo(() => {
@@ -71,6 +73,14 @@ export default function Home() {
   const handleClear = () => {
     setMatch(null)
     setMcResult(null)
+  }
+
+  const handleUseFromXgscore = (data) => {
+    setAutofill({ id: Date.now(), data })
+    setMatch(data)
+    setMcResult(null)
+    setTab('analise')
+    scrollToResults()
   }
 
   const handleNavigate = (id) => {
@@ -142,7 +152,16 @@ export default function Home() {
       <main className="mx-auto max-w-7xl px-4 sm:px-6">
         <Hero />
         <section id="formulario" className="pb-4">
-          <MatchForm initial={DEFAULT_MATCH} onCalculate={handleCalculate} onClear={handleClear} />
+          <MatchForm
+            initial={DEFAULT_MATCH}
+            autofill={autofill}
+            onCalculate={handleCalculate}
+            onClear={handleClear}
+          />
+        </section>
+
+        <section className="pb-4">
+          <XGScoreSearcher onUse={handleUseFromXgscore} />
         </section>
 
         <div ref={resultRef} className="scroll-mt-20 pt-8">
