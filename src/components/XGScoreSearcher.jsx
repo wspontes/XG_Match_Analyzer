@@ -34,6 +34,10 @@ export default function XGScoreSearcher({ onUse }) {
       awayName: m.awayTeam,
       homeXG: m.homeXG,
       awayXG: m.awayXG,
+      gameId: m.gameId,
+      odd: m.odd,
+      tip: m.tip,
+      valueBet: m.valueBet,
     })
   }
 
@@ -117,15 +121,20 @@ export default function XGScoreSearcher({ onUse }) {
                           {m.homeTeam}
                         </span>
                         <span className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 font-tabular text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                          {formatDecimal(m.homeXG, 1)}
+                          {formatDecimal(m.homeXG, 2)}
                         </span>
                         <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500">×</span>
                         <span className="rounded-md bg-sky-500/10 px-1.5 py-0.5 font-tabular text-xs font-bold text-sky-600 dark:text-sky-400">
-                          {formatDecimal(m.awayXG, 1)}
+                          {formatDecimal(m.awayXG, 2)}
                         </span>
                         <span className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                           {m.awayTeam}
                         </span>
+                        {m.tip && m.odd && (
+                          <span className="hidden items-center gap-1 rounded-md bg-zinc-500/10 px-1.5 py-0.5 text-[11px] font-medium text-zinc-500 sm:inline-flex dark:text-zinc-400">
+                            {m.tip} @ {formatDecimal(m.odd, 2)}
+                          </span>
+                        )}
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <a

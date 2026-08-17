@@ -49,6 +49,7 @@ export default function Home() {
   const [tab, setTab] = useState('analise')
   const [mcResult, setMcResult] = useState(null)
   const [autofill, setAutofill] = useState(null)
+  const [marketOdds, setMarketOdds] = useState(null)
   const resultRef = useRef(null)
 
   const analysis = useMemo(() => {
@@ -66,6 +67,7 @@ export default function Home() {
   const handleCalculate = (data) => {
     setMatch(data)
     setMcResult(null)
+    setMarketOdds(null)
     setTab('analise')
     scrollToResults()
   }
@@ -73,14 +75,31 @@ export default function Home() {
   const handleClear = () => {
     setMatch(null)
     setMcResult(null)
+    setMarketOdds(null)
   }
 
   const handleUseFromXgscore = (data) => {
     setAutofill({ id: Date.now(), data })
     setMatch(data)
     setMcResult(null)
+    setMarketOdds(null)
     setTab('analise')
     scrollToResults()
+    if (data.gameId) {
+      fetch(`/api/xgscore?gameId=${data.gameId}`)
+        .then((res) => res.json())
+        .then((json) => {
+          if (!json.error && json.max?.r && json.max.r['1']) {
+            setMarketOdds({
+              home: json.max.r['1'],
+              draw: json.max.r['x'],
+              away: json.max.r['2'],
+              source: 'xgscore',
+            })
+          }
+        })
+        .catch(() => {})
+    }
   }
 
   const handleNavigate = (id) => {
@@ -116,7 +135,7 @@ export default function Home() {
             <XgTotal result={analysis} />
             <TeamGoals result={analysis} match={match} />
             <MostLikelyMarkets result={analysis} />
-            <OddsCalculator result={analysis} />
+            <OddsCalculator result={analysis} initialOdds={marketOdds} />
           </div>
         )
       case 'simulacao':

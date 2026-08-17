@@ -1,123 +1,113 @@
-const HOME_URL = 'https://xgscore.io/'
+const API_BASE = 'https://api.xgscore.io'
+const UA =
+  'Mozilla/5.0 (compatible; XGMatchAnalyzer/1.0; +https://github.com/wspontes/XG_Match_Analyzer)'
 
-function cleanText(s) {
-  return (s || '').replace(/<!---->/g, '').replace(/\s+/g, ' ').trim()
+async function apiFetch(path) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { 'user-agent': UA },
+    signal: AbortSignal.timeout(15000),
+  })
+  if (!res.ok) {
+    throw new Error(`api.xgscore.io respondeu HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+function formatDateTime(iso) {
+  if (!iso) return ''
+  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/)
+  if (!m) return ''
+  return `${m[3]}/${m[2]} ${m[4]}:${m[5]}`
+}
+
+function parseOddsRow(str) {
+  try {
+    const arr = JSON.parse(str)
+    if (!Array.isArray(arr)) return null
+    return Object.fromEntries(arr.map(([k, v]) => [String(k), v]))
+  } catch {
+    return null
+  }
 }
 
 /**
- * Extrai as previsões de xG das partidas exibidas na página inicial
- * do xgscore.io (Angular SSR). Cada partida está em um
- * <a class="xgs-panel_link xgs-fixture_link" href="..."> com dois <mark>
- * contendo o xG previsto (bg-primary = mandante, bg-secondary = visitante).
+ * Busca a lista de partidas com previsões públicas da API do xgscore.io.
+ * Cada item retornado pela API é a previsão (value bet) de um jogo e já
+ * embute o forecastScore (xG esperado) de cada time com 2 casas decimais.
  */
-export function parseXGScore(html) {
-  const leagues = []
-  const leagueRe = /<xgs-tournament-label[\s\S]*?<span class="bold-text">\s*([\s\S]*?)\s*<\/span>/g
-  let lm
-  while ((lm = leagueRe.exec(html)) !== null) {
-    const name = cleanText(lm[1])
-    if (name) leagues.push({ pos: lm.index, name })
-  }
-
-  const leagueFor = (pos) => {
-    let best = null
-    for (const l of leagues) {
-      if (l.pos <= pos) best = l
-      else break
-    }
-    return best?.name || ''
-  }
-
-  const fixtureRe =
-    /<a class="xgs-panel_link xgs-fixture_link[^"]*"\s+href="([^"]+)"\s*>([\s\S]*?)<\/a>/g
-
-  const teamRe = /<span class="xgs-fixture_team[^>]*>([\s\S]*?)<\/span>/g
-  const xgMarkRe =
-    /class="xgs-mark (bg-primary|bg-secondary)[^"]*"[^>]*>\s*<strong[^>]*>\s*([\d.]+)\s*<\/strong>/g
+export async function fetchXGScore() {
+  const items = await apiFetch('/forecasts/coming/public')
 
   const matches = []
   const seen = new Set()
 
-  for (const fm of html.matchAll(fixtureRe)) {
-    const block = fm[2]
-    if (!block.includes('xgs-public-forecast-fixture-score')) continue
+  for (const item of items) {
+    const game = item?.game
+    if (!game || !game.teams || !game.tournament) continue
+    const gameId = item.gameId || game.id
+    if (!gameId || seen.has(gameId)) continue
+    seen.add(gameId)
 
-    const link = fm[1]
-    if (seen.has(link)) continue
-    seen.add(link)
+    const homeXG = game.forecastScore?.h
+    const awayXG = game.forecastScore?.a
+    if (typeof homeXG !== 'number' || typeof awayXG !== 'number') continue
 
-    const teamSpans = []
-    let tm
-    teamRe.lastIndex = 0
-    while ((tm = teamRe.exec(block)) !== null) teamSpans.push(tm[1])
-    const teamName = (i) => cleanText((teamSpans[i] || '').replace(/<img[\s\S]*?>/g, ''))
-
-    const marks = []
-    let xm
-    xgMarkRe.lastIndex = 0
-    while ((xm = xgMarkRe.exec(block)) !== null) marks.push(xm)
-
-    const primary = marks.find((x) => x[1] === 'bg-primary')
-    const secondary = marks.find((x) => x[1] === 'bg-secondary')
-
-    const homeTeam = teamName(0)
-    const awayTeam = teamName(1)
+    const homeTeam = game.teams.h?.name
+    const awayTeam = game.teams.a?.name
     if (!homeTeam || !awayTeam) continue
 
-    const homeXG = primary ? parseFloat(primary[2]) : null
-    const awayXG = secondary ? parseFloat(secondary[2]) : null
-    if (homeXG === null || awayXG === null) continue
-
-    const dt = block.match(
-      /<span class="text-muted ng-star-inserted">\s*([^<]+?)\s*<\/span>(?:<!---->)?\s*<span class="text-muted">\s*([^<]+?)\s*<\/span>/,
-    )
-    const dateTime = dt ? cleanText(`${dt[1]} ${dt[2]}`) : ''
-
-    const oddM = block.match(/class="[^"]*bg-success[^"]*"[^>]*>\s*<strong[^>]*>\s*([\d.]+)\s*<\/strong>/)
-    const odd = oddM ? parseFloat(oddM[1]) : null
-
     matches.push({
-      league: leagueFor(fm.index),
-      dateTime,
+      gameId,
+      league: game.tournament.name || '',
+      leagueSlug: game.tournament.slug || '',
+      dateTime: formatDateTime(game.datetime),
       homeTeam,
       homeXG,
       awayXG,
       awayTeam,
-      link,
-      odd,
+      homeLogo: game.teams.h?.logoUrl || null,
+      awayLogo: game.teams.a?.logoUrl || null,
+      link: `/${game.tournament.slug}/${game.slug}/xgscore`,
+      odd: typeof item.startCf === 'number' ? item.startCf : null,
+      tip: item.text || null,
+      valueBet: typeof item.valueBet === 'number' ? item.valueBet : null,
     })
   }
 
-  return matches
+  return { fetchedAt: new Date().toISOString(), matches }
 }
 
-let cache = { at: 0, data: null }
-const CACHE_TTL_MS = 5 * 60 * 1000
+const oddsCache = new Map()
+const ODDS_TTL_MS = 5 * 60 * 1000
 
 /**
- * Busca e analisa a página do xgscore.io, com cache curto
- * para evitar requisições excessivas ao site de origem.
+ * Busca as odds reais (1X2, dupla chance e BTTS) de um jogo.
+ * Retorna a média global (AVG) e a melhor odd disponível (MAX).
  */
-export async function fetchXGScore() {
+export async function fetchOdds(gameId) {
   const now = Date.now()
-  if (cache.data && now - cache.at < CACHE_TTL_MS) {
-    return cache.data
+  const cached = oddsCache.get(gameId)
+  if (cached && now - cached.at < ODDS_TTL_MS) {
+    return cached.data
   }
 
-  const res = await fetch(HOME_URL, {
-    headers: {
-      'user-agent': 'Mozilla/5.0 (compatible; XGMatchAnalyzer/1.0; +https://github.com/wspontes/XG_Match_Analyzer)',
-    },
-    signal: AbortSignal.timeout(15000),
+  const rows = await apiFetch(`/odds/game/${gameId}`)
+  const avg = rows.find((r) => r.type === 'AVG')
+  const max = rows.find((r) => r.type === 'MAX')
+
+  const pick = (row) => ({
+    r: row?.r ? parseOddsRow(row.r) : null,
+    dc: row?.dc ? parseOddsRow(row.dc) : null,
+    bts: row?.bts ? parseOddsRow(row.bts) : null,
   })
 
-  if (!res.ok) {
-    throw new Error(`xgscore.io respondeu HTTP ${res.status}`)
+  const data = {
+    gameId,
+    fetchedAt: new Date().toISOString(),
+    avg: avg ? pick(avg) : null,
+    max: max ? pick(max) : null,
   }
 
-  const html = await res.text()
-  const data = { fetchedAt: new Date().toISOString(), matches: parseXGScore(html) }
-
-  cache = { at: Date.now(), data }
+  oddsCache.set(gameId, { at: Date.now(), data })
   return data
 }

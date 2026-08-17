@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Wallet, ArrowUpRight, ArrowDownRight, Info } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Wallet, ArrowUpRight, ArrowDownRight, Info, Sparkles } from 'lucide-react'
 import { Card, SectionHeading, Badge } from './ui'
 import { formatPercent, formatOdd, formatEV, parseDecimal } from '../utils/formatters'
 
@@ -27,10 +27,25 @@ const rows = [
 const inputBase =
   'w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100'
 
-export default function OddsCalculator({ result }) {
+export default function OddsCalculator({ result, initialOdds }) {
   const [odds, setOdds] = useState({ home: '', draw: '', away: '' })
+  const [source, setSource] = useState(null)
 
-  const setOdd = (key, value) => setOdds((o) => ({ ...o, [key]: value }))
+  useEffect(() => {
+    if (initialOdds && (initialOdds.home || initialOdds.draw || initialOdds.away)) {
+      setOdds({
+        home: initialOdds.home ? String(initialOdds.home).replace('.', ',') : '',
+        draw: initialOdds.draw ? String(initialOdds.draw).replace('.', ',') : '',
+        away: initialOdds.away ? String(initialOdds.away).replace('.', ',') : '',
+      })
+      setSource(initialOdds.source || 'xgscore')
+    }
+  }, [initialOdds])
+
+  const setOdd = (key, value) => {
+    setOdds((o) => ({ ...o, [key]: value }))
+    setSource(null)
+  }
 
   const rowsData = rows.map((r) => {
     const modelProb = result.prob[r.key]
@@ -115,6 +130,13 @@ export default function OddsCalculator({ result }) {
             </p>
           </div>
         </div>
+        {source === 'xgscore' && (
+          <p className="mt-3 flex items-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
+            <Sparkles className="h-3.5 w-3.5 text-sky-500" />
+            Odds preenchidas automaticamente a partir da melhor odd disponível no xgscore.io. Você pode
+            editá-las manualmente.
+          </p>
+        )}
       </Card>
     </section>
   )

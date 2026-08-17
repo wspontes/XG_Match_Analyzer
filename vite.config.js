@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { fetchXGScore } from './api/parse.js'
+import { fetchXGScore, fetchOdds } from './api/parse.js'
 
 export default defineConfig({
   plugins: [
@@ -8,10 +8,12 @@ export default defineConfig({
     {
       name: 'xgscore-dev-api',
       configureServer(server) {
-        server.middlewares.use('/api/xgscore', async (_req, res) => {
+        server.middlewares.use('/api/xgscore', async (req, res) => {
           res.setHeader('Content-Type', 'application/json')
           try {
-            const data = await fetchXGScore()
+            const url = new URL(req.url, 'http://localhost')
+            const gameId = url.searchParams.get('gameId')
+            const data = gameId ? await fetchOdds(gameId) : await fetchXGScore()
             res.end(JSON.stringify(data))
           } catch (err) {
             res.statusCode = 502
