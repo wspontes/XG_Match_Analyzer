@@ -20,6 +20,7 @@ import XgTotal from '../components/XgTotal'
 import TeamGoals from '../components/TeamGoals'
 import MostLikelyMarkets from '../components/MostLikelyMarkets'
 import OddsCalculator from '../components/OddsCalculator'
+import SheetExport from '../components/SheetExport'
 import MonteCarlo from '../components/MonteCarlo'
 import ConvergenceChart from '../components/ConvergenceChart'
 import Methodology from '../components/Methodology'
@@ -159,6 +160,7 @@ export default function Home() {
             <MatchSummary match={match} result={analysis} />
             <ProbabilityCards result={analysis} />
             <KeyMetrics result={analysis} match={match} />
+            <SheetExport match={match} result={analysis} />
           </div>
         )
     }
