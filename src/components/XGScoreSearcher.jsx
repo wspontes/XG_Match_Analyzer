@@ -111,30 +111,42 @@ export default function XGScoreSearcher({ onUse }) {
                   {list.map((m) => (
                     <div
                       key={m.link}
-                      className="flex flex-wrap items-center gap-3 px-4 py-3 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/40"
+                      className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800/40"
                     >
-                      <span className="w-24 shrink-0 text-[11px] font-medium text-zinc-400 dark:text-zinc-500">
-                        {m.dateTime}
-                      </span>
-                      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                          {m.homeTeam}
-                        </span>
-                        <span className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 font-tabular text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                          {formatDecimal(m.homeXG, 2)}
-                        </span>
-                        <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500">×</span>
-                        <span className="rounded-md bg-sky-500/10 px-1.5 py-0.5 font-tabular text-xs font-bold text-sky-600 dark:text-sky-400">
-                          {formatDecimal(m.awayXG, 2)}
-                        </span>
-                        <span className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                          {m.awayTeam}
-                        </span>
-                        {m.tip && m.odd && (
-                          <span className="hidden items-center gap-1 rounded-md bg-zinc-500/10 px-1.5 py-0.5 text-[11px] font-medium text-zinc-500 sm:inline-flex dark:text-zinc-400">
-                            {m.tip} @ {formatDecimal(m.odd, 2)}
-                          </span>
-                        )}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
+                          <CalendarDays className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{m.dateTime}</span>
+                          {m.tip && m.odd && (
+                            <span className="ml-auto hidden shrink-0 rounded-md bg-zinc-500/10 px-1.5 py-0.5 text-[11px] font-medium text-zinc-500 sm:inline-flex dark:text-zinc-400">
+                              {m.tip} @ {formatDecimal(m.odd, 2)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1.5 space-y-1">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span
+                              title={m.homeTeam}
+                              className="min-w-0 flex-1 truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100"
+                            >
+                              {m.homeTeam}
+                            </span>
+                            <span className="shrink-0 rounded-md bg-emerald-500/10 px-1.5 py-0.5 font-tabular text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                              {formatDecimal(m.homeXG, 2)}
+                            </span>
+                          </div>
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span
+                              title={m.awayTeam}
+                              className="min-w-0 flex-1 truncate text-sm font-semibold text-zinc-900 dark:text-zinc-100"
+                            >
+                              {m.awayTeam}
+                            </span>
+                            <span className="shrink-0 rounded-md bg-sky-500/10 px-1.5 py-0.5 font-tabular text-xs font-bold text-sky-600 dark:text-sky-400">
+                              {formatDecimal(m.awayXG, 2)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <a

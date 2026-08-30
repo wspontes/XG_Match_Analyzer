@@ -28,6 +28,17 @@ function Stat({ label, value }) {
   )
 }
 
+function Metric({ label, children, className = '' }) {
+  return (
+    <div className={`rounded-lg bg-zinc-50 px-3 py-2 dark:bg-zinc-800/60 ${className}`}>
+      <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+        {label}
+      </div>
+      <div className="mt-0.5 text-xs font-semibold text-zinc-800 dark:text-zinc-200">{children}</div>
+    </div>
+  )
+}
+
 function HitRow({ label, hit }) {
   if (hit === undefined) return null
   return (
@@ -129,8 +140,8 @@ export default function HistoryTracker({ match, result }) {
       />
 
       {match && result && (
-        <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
-          <div className="text-sm text-zinc-600 dark:text-zinc-300">
+        <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0 text-sm text-zinc-600 dark:text-zinc-300">
             Salvar a análise atual:{' '}
             <b className="text-zinc-900 dark:text-white">
               {match.homeName} {match.homeXG.toFixed(2)} x {match.awayXG.toFixed(2)} {match.awayName}
@@ -138,20 +149,21 @@ export default function HistoryTracker({ match, result }) {
           </div>
           <button
             onClick={handleSaveCurrent}
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-500/25 transition-colors hover:bg-emerald-600"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-500/25 transition-colors hover:bg-emerald-600 sm:w-auto"
           >
             <Save className="h-4 w-4" /> Salvar no histórico
           </button>
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
         <Stat label="Analisadas" value={list.length} />
         <Stat label="Resolvidas" value={stats.total} />
         <Stat label="1X2" value={`${rate(stats.out)}%`} />
         <Stat label="Placar exato" value={`${rate(stats.top1)}%`} />
         <Stat label="Top 3 placares" value={`${rate(stats.top3)}%`} />
-        <Stat label="BTTS + O/U 2.5" value={`${rate(stats.btts)}% / ${rate(stats.ou)}%`} />
+        <Stat label="BTTS" value={`${rate(stats.btts)}%`} />
+        <Stat label="O/U 2.5" value={`${rate(stats.ou)}%`} />
       </div>
 
       {list.length === 0 ? (
@@ -179,31 +191,16 @@ export default function HistoryTracker({ match, result }) {
                 }
               : null
             return (
-              <Card key={rec.id} className="p-5">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
-                        {rec.homeName} x {rec.awayName}
-                      </h3>
-                      {resolved ? (
-                        <Badge color="sky">
-                          Resultado: {rec.actual.homeGoals} x {rec.actual.awayGoals}
-                        </Badge>
-                      ) : (
-                        <Badge color="amber">Aguardando resultado</Badge>
-                      )}
-                    </div>
-                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                      {formatPercent(rec.snapshot.prob.home)} / {formatPercent(rec.snapshot.prob.draw)} /{' '}
-                      {formatPercent(rec.snapshot.prob.away)} · placar mais provável{' '}
-                      <b className="text-zinc-700 dark:text-zinc-200">
-                        {rec.snapshot.mostLikely.home} x {rec.snapshot.mostLikely.away}
-                      </b>{' '}
-                      · top mercados:{' '}
-                      {rec.snapshot.marketsRanking.join(' · ') || ''}
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-zinc-400 dark:text-zinc-600">
+              <Card key={rec.id} className="p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h3
+                      className="truncate text-sm font-bold text-zinc-900 dark:text-white"
+                      title={`${rec.homeName} x ${rec.awayName}`}
+                    >
+                      {rec.homeName} x {rec.awayName}
+                    </h3>
+                    <p className="text-[11px] text-zinc-400 dark:text-zinc-600">
                       {new Date(rec.savedAt).toLocaleString('pt-BR', {
                         day: '2-digit',
                         month: '2-digit',
@@ -213,13 +210,34 @@ export default function HistoryTracker({ match, result }) {
                       })}
                     </p>
                   </div>
-                  <button
-                    onClick={() => handleDelete(rec.id)}
-                    className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
-                    aria-label="Excluir registro"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {resolved ? (
+                      <Badge color="sky">Resultado: {rec.actual.homeGoals} x {rec.actual.awayGoals}</Badge>
+                    ) : (
+                      <Badge color="amber">Aguardando resultado</Badge>
+                    )}
+                    <button
+                      onClick={() => handleDelete(rec.id)}
+                      className="rounded-lg p-2 text-zinc-400 transition-colors hover:bg-red-50 hover:text-red-500 dark:hover:bg-red-500/10"
+                      aria-label="Excluir registro"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                  <Metric label="1X2 modelo">
+                    {formatPercent(rec.snapshot.prob.home)} / {formatPercent(rec.snapshot.prob.draw)} /{' '}
+                    {formatPercent(rec.snapshot.prob.away)}
+                  </Metric>
+                  <Metric label="Placar provável">
+                    {rec.snapshot.mostLikely.home} x {rec.snapshot.mostLikely.away} ·{' '}
+                    {formatPercent(rec.snapshot.mostLikely.prob)}
+                  </Metric>
+                  <Metric label="Top mercados" className="col-span-2 sm:col-span-1 lg:col-span-2">
+                    <span className="line-clamp-2">{rec.snapshot.marketsRanking.join(' · ')}</span>
+                  </Metric>
                 </div>
 
                 {resolved ? (
@@ -231,31 +249,39 @@ export default function HistoryTracker({ match, result }) {
                     <HitRow label="O/U 2.5" hit={hits.ou} />
                   </div>
                 ) : (
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">Registrar resultado real:</span>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Gols casa"
-                      value={input.homeGoals ?? ''}
-                      onChange={(e) => handleInput(rec.id, 'homeGoals', e.target.value)}
-                      className="w-24 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-900 outline-none focus:border-emerald-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                    />
-                    <span className="text-xs text-zinc-400">x</span>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="Gols fora"
-                      value={input.awayGoals ?? ''}
-                      onChange={(e) => handleInput(rec.id, 'awayGoals', e.target.value)}
-                      className="w-24 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-sm text-zinc-900 outline-none focus:border-emerald-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
-                    />
-                    <button
-                      onClick={() => handleRegister(rec.id)}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
-                    >
-                      <Plus className="h-3.5 w-3.5" /> Registrar
-                    </button>
+                  <div className="mt-3 rounded-xl bg-zinc-50 p-3 dark:bg-zinc-800/60">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                        Registrar resultado real
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        inputMode="numeric"
+                        placeholder="Casa"
+                        value={input.homeGoals ?? ''}
+                        onChange={(e) => handleInput(rec.id, 'homeGoals', e.target.value)}
+                        className="w-0 flex-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-2 text-center text-sm font-semibold text-zinc-900 outline-none focus:border-emerald-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                      />
+                      <span className="text-xs font-bold text-zinc-400">x</span>
+                      <input
+                        type="number"
+                        min="0"
+                        inputMode="numeric"
+                        placeholder="Fora"
+                        value={input.awayGoals ?? ''}
+                        onChange={(e) => handleInput(rec.id, 'awayGoals', e.target.value)}
+                        className="w-0 flex-1 rounded-lg border border-zinc-200 bg-white px-2.5 py-2 text-center text-sm font-semibold text-zinc-900 outline-none focus:border-emerald-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                      />
+                      <button
+                        onClick={() => handleRegister(rec.id)}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-zinc-900 px-3.5 py-2 text-xs font-semibold text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+                      >
+                        <Plus className="h-3.5 w-3.5" /> Registrar
+                      </button>
+                    </div>
                   </div>
                 )}
               </Card>
