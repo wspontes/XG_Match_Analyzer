@@ -4,6 +4,8 @@ import Header from '../components/Header'
 import Hero from '../components/Hero'
 import MatchForm from '../components/MatchForm'
 import XGScoreSearcher from '../components/XGScoreSearcher'
+import ShareAnalysis from '../components/ShareAnalysis'
+import HistoryTracker from '../components/HistoryTracker'
 import MatchSummary from '../components/MatchSummary'
 import ProbabilityCards from '../components/ProbabilityCards'
 import KeyMetrics from '../components/KeyMetrics'
@@ -20,6 +22,7 @@ import XgTotal from '../components/XgTotal'
 import TeamGoals from '../components/TeamGoals'
 import MostLikelyMarkets from '../components/MostLikelyMarkets'
 import OddsCalculator from '../components/OddsCalculator'
+import ValueBets from '../components/ValueBets'
 import SheetExport from '../components/SheetExport'
 import MonteCarlo from '../components/MonteCarlo'
 import ConvergenceChart from '../components/ConvergenceChart'
@@ -29,6 +32,18 @@ import { buildAnalysis } from '../utils/analysis'
 import { TABS } from '../constants'
 
 const DEFAULT_MATCH = { homeName: 'Brasil', awayName: 'Noruega', homeXG: 1.6, awayXG: 1.3 }
+
+function getInitialMatch() {
+  const params = new URLSearchParams(window.location.search)
+  const home = params.get('home')
+  const away = params.get('away')
+  const homeXG = parseFloat((params.get('hxg') || '').replace(',', '.'))
+  const awayXG = parseFloat((params.get('axg') || '').replace(',', '.'))
+  if (home && away && Number.isFinite(homeXG) && Number.isFinite(awayXG)) {
+    return { homeName: home, awayName: away, homeXG, awayXG }
+  }
+  return DEFAULT_MATCH
+}
 
 function EmptyState() {
   return (
@@ -46,7 +61,7 @@ function EmptyState() {
 }
 
 export default function Home() {
-  const [match, setMatch] = useState(DEFAULT_MATCH)
+  const [match, setMatch] = useState(getInitialMatch)
   const [tab, setTab] = useState('analise')
   const [mcResult, setMcResult] = useState(null)
   const [autofill, setAutofill] = useState(null)
@@ -90,12 +105,12 @@ export default function Home() {
       fetch(`/api/xgscore?gameId=${data.gameId}`)
         .then((res) => res.json())
         .then((json) => {
-          if (!json.error && json.max?.r && json.max.r['1']) {
+          if (!json.error && json.max) {
             setMarketOdds({
-              home: json.max.r['1'],
-              draw: json.max.r['x'],
-              away: json.max.r['2'],
+              max: json.max,
+              avg: json.avg,
               source: 'xgscore',
+              gameId: data.gameId,
             })
           }
         })
@@ -136,7 +151,20 @@ export default function Home() {
             <XgTotal result={analysis} />
             <TeamGoals result={analysis} match={match} />
             <MostLikelyMarkets result={analysis} />
-            <OddsCalculator result={analysis} initialOdds={marketOdds} />
+            <ValueBets result={analysis} marketOdds={marketOdds} />
+            <OddsCalculator
+              result={analysis}
+              initialOdds={
+                marketOdds?.max?.r
+                  ? {
+                      home: marketOdds.max.r['1'],
+                      draw: marketOdds.max.r['x'],
+                      away: marketOdds.max.r['2'],
+                      source: 'xgscore',
+                    }
+                  : null
+              }
+            />
           </div>
         )
       case 'simulacao':
@@ -151,12 +179,15 @@ export default function Home() {
             <ConvergenceChart result={analysis} mcResult={mcResult} />
           </div>
         )
+      case 'historico':
+        return <HistoryTracker match={match} result={analysis} />
       case 'metodologia':
         return <Methodology />
       case 'analise':
       default:
         return (
           <div className="space-y-8">
+            <ShareAnalysis match={match} />
             <MatchSummary match={match} result={analysis} />
             <ProbabilityCards result={analysis} />
             <KeyMetrics result={analysis} match={match} />

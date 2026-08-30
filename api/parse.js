@@ -99,6 +99,15 @@ export async function fetchOdds(gameId) {
     r: row?.r ? parseOddsRow(row.r) : null,
     dc: row?.dc ? parseOddsRow(row.dc) : null,
     bts: row?.bts ? parseOddsRow(row.bts) : null,
+    tm: row?.tm ? parseOddsRow(row.tm) : null,
+    tl: row?.tl ? parseOddsRow(row.tl) : null,
+    itm1: row?.itm1 ? parseOddsRow(row.itm1) : null,
+    itl1: row?.itl1 ? parseOddsRow(row.itl1) : null,
+    itm2: row?.itm2 ? parseOddsRow(row.itm2) : null,
+    itl2: row?.itl2 ? parseOddsRow(row.itl2) : null,
+    h1: row?.h1 ? parseOddsRow(row.h1) : null,
+    h2: row?.h2 ? parseOddsRow(row.h2) : null,
+    cs: row?.cs ? parseOddsRow(row.cs) : null,
   })
 
   const data = {

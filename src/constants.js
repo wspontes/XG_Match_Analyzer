@@ -4,6 +4,7 @@ export const TABS = [
   { id: 'placares', label: 'Placares' },
   { id: 'mercados', label: 'Mercados' },
   { id: 'simulacao', label: 'Simulação' },
+  { id: 'historico', label: 'Histórico' },
   { id: 'metodologia', label: 'Metodologia' },
 ]
 
