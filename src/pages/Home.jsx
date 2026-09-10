@@ -23,6 +23,8 @@ import TeamGoals from '../components/TeamGoals'
 import MostLikelyMarkets from '../components/MostLikelyMarkets'
 import OddsCalculator from '../components/OddsCalculator'
 import ValueBets from '../components/ValueBets'
+import TradeCalculator from '../components/TradeCalculator'
+import TradeWindows from '../components/TradeWindows'
 import SheetExport from '../components/SheetExport'
 import MonteCarlo from '../components/MonteCarlo'
 import ConvergenceChart from '../components/ConvergenceChart'
@@ -66,6 +68,7 @@ export default function Home() {
   const [mcResult, setMcResult] = useState(null)
   const [autofill, setAutofill] = useState(null)
   const [marketOdds, setMarketOdds] = useState(null)
+  const [tradePreset, setTradePreset] = useState(null)
   const resultRef = useRef(null)
 
   const analysis = useMemo(() => {
@@ -84,6 +87,7 @@ export default function Home() {
     setMatch(data)
     setMcResult(null)
     setMarketOdds(null)
+    setTradePreset(null)
     setTab('analise')
     scrollToResults()
   }
@@ -92,6 +96,7 @@ export default function Home() {
     setMatch(null)
     setMcResult(null)
     setMarketOdds(null)
+    setTradePreset(null)
   }
 
   const handleUseFromXgscore = (data) => {
@@ -99,6 +104,7 @@ export default function Home() {
     setMatch(data)
     setMcResult(null)
     setMarketOdds(null)
+    setTradePreset(null)
     setTab('analise')
     scrollToResults()
     if (data.gameId) {
@@ -165,6 +171,13 @@ export default function Home() {
                   : null
               }
             />
+          </div>
+        )
+      case 'exchange':
+        return (
+          <div className="space-y-8">
+            <TradeWindows result={analysis} marketOdds={marketOdds} onSelect={setTradePreset} />
+            <TradeCalculator preset={tradePreset} />
           </div>
         )
       case 'simulacao':

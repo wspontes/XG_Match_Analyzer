@@ -3,6 +3,7 @@ export const TABS = [
   { id: 'probabilidades', label: 'Probabilidades' },
   { id: 'placares', label: 'Placares' },
   { id: 'mercados', label: 'Mercados' },
+  { id: 'exchange', label: 'Exchange' },
   { id: 'simulacao', label: 'Simulação' },
   { id: 'historico', label: 'Histórico' },
   { id: 'metodologia', label: 'Metodologia' },
