@@ -13,13 +13,6 @@ async function apiFetch(path) {
   return res.json()
 }
 
-function formatDateTime(iso) {
-  if (!iso) return ''
-  const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/)
-  if (!m) return ''
-  return `${m[3]}/${m[2]} ${m[4]}:${m[5]}`
-}
-
 function parseOddsRow(str) {
   try {
     const arr = JSON.parse(str)
@@ -60,7 +53,7 @@ export async function fetchXGScore() {
       gameId,
       league: game.tournament.name || '',
       leagueSlug: game.tournament.slug || '',
-      dateTime: formatDateTime(game.datetime),
+      dateTime: game.datetime || '',
       homeTeam,
       homeXG,
       awayXG,

@@ -1,13 +1,15 @@
-import { useState } from 'react'
-import { Search, RefreshCw, Loader2, ArrowRight, CalendarDays, ExternalLink } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Search, RefreshCw, Loader2, ArrowRight, ExternalLink, CalendarRange } from 'lucide-react'
 import { Card, SectionHeading } from './ui'
 import { formatDecimal } from '../utils/formatters'
+import { matchDayKey, matchDayLabel, matchTime } from '../utils/datetime'
 
 export default function XGScoreSearcher({ onUse }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [data, setData] = useState(null)
   const [used, setUsed] = useState(null)
+  const [dateFilter, setDateFilter] = useState('all')
 
   const load = async () => {
     setLoading(true)
@@ -19,6 +21,7 @@ export default function XGScoreSearcher({ onUse }) {
         throw new Error(json.message || 'Não foi possível carregar as partidas.')
       }
       setData(json)
+      setDateFilter('all')
     } catch (e) {
       setError(e.message || 'Falha ao buscar partidas do xgscore.io.')
       setData(null)
@@ -41,14 +44,29 @@ export default function XGScoreSearcher({ onUse }) {
     })
   }
 
-  const groups = data
-    ? data.matches.reduce((acc, m) => {
-        const key = m.league || 'Outros'
-        if (!acc[key]) acc[key] = []
-        acc[key].push(m)
-        return acc
-      }, {})
-    : {}
+  const groups = useMemo(() => {
+    const list = data ? data.matches : []
+    const filtered =
+      dateFilter === 'all'
+        ? list
+        : list.filter((m) => matchDayKey(m.dateTime) === dateFilter)
+    return filtered.reduce((acc, m) => {
+      const key = m.league || 'Outros'
+      if (!acc[key]) acc[key] = []
+      acc[key].push(m)
+      return acc
+    }, {})
+  }, [data, dateFilter])
+
+  const availableDates = useMemo(() => {
+    if (!data) return []
+    const map = new Map()
+    for (const m of data.matches) {
+      const key = matchDayKey(m.dateTime)
+      if (key && !map.has(key)) map.set(key, matchDayLabel(m.dateTime))
+    }
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]))
+  }, [data])
 
   return (
     <section>
@@ -94,6 +112,27 @@ export default function XGScoreSearcher({ onUse }) {
           </div>
         )}
 
+        {data && availableDates.length > 0 && (
+          <div className="mb-4 flex items-center gap-2">
+            <CalendarRange className="h-4 w-4 shrink-0 text-zinc-400" />
+            <select
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 sm:w-auto"
+            >
+              <option value="all">Todos os dias</option>
+              {availableDates.map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <span className="hidden text-xs text-zinc-400 dark:text-zinc-500 sm:inline">
+              {Object.values(groups).reduce((n, l) => n + l.length, 0)} jogos
+            </span>
+          </div>
+        )}
+
         {data && (
           <div className="max-h-[480px] space-y-5 overflow-y-auto pr-1">
             {Object.keys(groups).length === 0 && (
@@ -104,7 +143,7 @@ export default function XGScoreSearcher({ onUse }) {
             {Object.entries(groups).map(([league, list]) => (
               <div key={league}>
                 <h4 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  <CalendarDays className="h-3.5 w-3.5" />
+                  <CalendarRange className="h-3.5 w-3.5" />
                   {league}
                 </h4>
                 <div className="divide-y divide-zinc-100 overflow-hidden rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-700">
@@ -115,8 +154,15 @@ export default function XGScoreSearcher({ onUse }) {
                     >
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 text-[11px] text-zinc-400 dark:text-zinc-500">
-                          <CalendarDays className="h-3 w-3 shrink-0" />
-                          <span className="truncate">{m.dateTime}</span>
+                          {dateFilter === 'all' && (
+                            <>
+                              <span className="truncate">{matchDayLabel(m.dateTime)}</span>
+                              <span>·</span>
+                            </>
+                          )}
+                          <span className="shrink-0 font-tabular font-semibold text-zinc-500 dark:text-zinc-400">
+                            {matchTime(m.dateTime)}
+                          </span>
                           {m.tip && m.odd && (
                             <span className="ml-auto hidden shrink-0 rounded-md bg-zinc-500/10 px-1.5 py-0.5 text-[11px] font-medium text-zinc-500 sm:inline-flex dark:text-zinc-400">
                               {m.tip} @ {formatDecimal(m.odd, 2)}
